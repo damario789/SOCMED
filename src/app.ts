@@ -2,6 +2,7 @@ import express, { Express, Request, Response, Router} from 'express';
 import router from './routes/index';
 import cors from 'cors';
 import { addRequestId } from './middlewares/auth.middleware';
+import { errorHandler } from './middlewares/error.middleware';
 
 const app: Express = express();
 app.use(express.json());
@@ -23,5 +24,6 @@ app.get("/", (_, res: Response): Response => {
 
 // Use main router
 app.use(router);
+app.use(errorHandler)
 
 export default module.exports = app;
