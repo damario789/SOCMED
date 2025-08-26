@@ -1,12 +1,10 @@
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.client';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError, ConflictError } from '../utils/custom.errors';
 import { Request } from 'express';
 import { getTransporter } from '../utils/nodemailer.util';
 import { TextEncoder } from "util";
-
-const prisma = new PrismaClient();
 
 export const registerService = async (email: string, password: string, username: string) => {
     const saltRounds = 10;
@@ -38,8 +36,6 @@ export const registerService = async (email: string, password: string, username:
 }
 
 export const loginService = async (email: string, password: string) => {
-    try {
-
     // user might fill the email also as username
     // const user = await prisma.user.findUnique({
     //     where: { email },
@@ -76,10 +72,6 @@ export const loginService = async (email: string, password: string) => {
     );
 
     return token;
-            
-    } catch (error) {
-        console.error('Login error:', error);
-    }
 }
 
 export const forgotPasswordService = async (email: string, req: Request) => {

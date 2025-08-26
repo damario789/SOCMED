@@ -9,8 +9,19 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   //   path: req.path,
   //   method: req.method,
   // });
+    // Handle JsonWebTokenError
+  if (err.name === 'JsonWebTokenError') {
+    // console.log('JWT error:', err.message);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
 
+  if (err.name === 'TokenExpiredError') {
+    // console.log('JWT error:', err.message);
+    return res.status(401).json({ error: err.message });
+  }
+  // console.log('Error Handler Invoked:', err);
   if (err instanceof UnauthorizedError) {
+    // console.log(1)
     return res.status(401).json({ error: err.message });
   }
   if (err instanceof ValidationError) {
@@ -26,6 +37,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   if (err instanceof ConflictError) {
     return res.status(409).json({ error: err.message });
   }
+
   // Handle Prisma errors
   if (err.name === 'PrismaClientKnownRequestError') {
     console.log('Prisma error:', err.message);

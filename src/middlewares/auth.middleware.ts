@@ -6,7 +6,15 @@ import { v4 as uuidv4 } from 'uuid';
 // import { ForbiddenError, UnauthorizedError } from '../utils/customErrors';
 
 export interface AuthRequest extends Request {
-  user: { userId: number; role: string };
+  user?: {
+    id: number;
+    email: string;
+    username: string;
+    createdAt: string;
+    updatedAt: string;
+    iat: number;
+    exp: number;
+  };
   id?: string; // For request tracing
 }
 
@@ -21,10 +29,16 @@ export const addRequestId = (req: Request, _: Response, next: NextFunction) => {
   next();
 };
 
-export const authenticateToken = async (req: AuthRequest, _: Response, next: NextFunction) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) throw new Error('No token provided');
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: number; role: string };
-  req.user = decoded
-  next();
+export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) throw new Error('No token provided');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    if (typeof decoded === 'object' && decoded !== null) {
+        req.user = decoded as AuthRequest['user'];
+        console.log(decoded, "decoded");
+        next();
+    } else {
+        // Handle the case where decoded is a string (invalid token structure)
+        res.status(401).json({ error: 'Invalid token payload' });
+    }
 };

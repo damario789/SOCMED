@@ -14,10 +14,99 @@ datasource db {
 }
 
 model User {
+  id         Int           @id @default(autoincrement())
+  email      String        @unique
+  username   String        @unique
+  password   String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  posts      Post[]
+  followers  Follow[]      @relation("UserFollowers")
+  following  Follow[]      @relation("UserFollowing")
+  comments   Comment[]
+  likes      Like[]
+  commentLikes CommentLike[]
+
+  // Add an index for username searches (for user lookups)
+  @@index([username])
+}
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  imageUrl   String
+  caption    String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  
+  comments   Comment[]
+  likes      Like[]
+
+  // Add indexes for feed queries and user profile views
+  @@index([userId])
+  @@index([createdAt]) // For timeline sorting
+}
+
+model Comment {
+  id          Int          @id @default(autoincrement())
+  content     String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      Int
+  post        Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Self-relation for parent-child comments (replies)
+  parentId    Int?
+  parent      Comment?     @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[]    @relation("CommentReplies")
+  
+  likes       CommentLike[]
+
+  // Add indexes for common comment queries
+  @@index([postId, createdAt]) // For listing comments on a post
+  @@index([parentId]) // For finding replies to a comment
+  @@index([userId]) // For finding user's comments
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, postId])  // Prevent duplicate likes
+  @@index([postId, createdAt]) // For showing recent likes
+}
+
+model CommentLike {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId Int
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, commentId])  // Prevent duplicate likes on comments
+  @@index([commentId, createdAt]) // For sorting comments by popularity
+}
+
+model Follow {
   id           Int      @id @default(autoincrement())
-  email        String   @unique 
-  username     String   @unique 
-  password     String
+  user         User     @relation("UserFollowing", fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int      // the user who is following
+  following    User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId  Int      // the user being followed
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, followingId])
+  
+  // Add indexes for follower/following counts
+  @@index([userId]) // For finding who a user follows
+  @@index([followingId]) // For finding who follows a user
 }

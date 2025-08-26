@@ -1,7 +1,20 @@
 import { ValidationError as ClassValidatorError } from 'class-validator';
 
-export function extractValidationMessages(errors: ClassValidatorError[]): string[] {
-    return errors
-        .map(e => Object.values(e.constraints || {}))
-        .flat();
-}
+export const extractValidationMessages = (errors: ClassValidatorError[]): string[] => {
+  const result: string[] = [];
+  
+  for (const error of errors) {
+    if (error.constraints) {
+      const messages = Object.values(error.constraints);
+      result.push(...messages);
+    }
+    
+    // Handle nested validation errors
+    if (error.children && error.children.length > 0) {
+      const nestedMessages = extractValidationMessages(error.children);
+      result.push(...nestedMessages);
+    }
+  }
+  
+  return result;
+};
